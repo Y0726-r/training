@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="筋トレログ">
+<meta name="theme-color" content="#0d0d0f">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<title>筋トレログ</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap');
+
+  :root {
+    --bg: #0d0d0f;
+    --surface: #161619;
+    --surface2: #1e1e23;
+    --border: #2a2a32;
+    --accent: #c8f535;
+    --accent2: #7c6dfa;
+    --text: #f0f0f0;
+    --text2: #888;
+    --danger: #ff4d6d;
+    --warn: #ffaa00;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: env(safe-area-inset-top, 24px) 16px env(safe-area-inset-bottom, 60px);
+    padding-top: max(env(safe-area-inset-top), 24px);
+    padding-bottom: max(env(safe-area-inset-bottom), 60px);
+  }
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+
+  .subtitle { font-size: 12px; color: var(--text2); margin-bottom: 24px; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+
+  .card-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text2);
+    margin-bottom: 12px;
+  }
+
+  .row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+
+  input[type="date"] {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 14px;
+    padding: 10px 12px;
+    flex: 1;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input[type="date"]:focus { border-color: var(--accent); }
+
+  textarea {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 13px;
+    line-height: 1.7;
+    padding: 12px;
+    width: 100%;
+    min-height: 200px;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  textarea:focus { border-color: var(--accent); }
+  textarea::placeholder { color: var(--text2); font-size: 12px; }
+
+  .btn {
+    background: var(--accent);
+    color: #0d0d0f;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 12px 20px;
+    cursor: pointer;
+    width: 100%;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  .btn:hover { opacity: 0.9; }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .status {
+    font-size: 12px;
+    color: var(--accent2);
+    text-align: center;
+    padding: 8px;
+    display: none;
+  }
+  .status.active { display: block; }
+
+  .exercise-block {
+    border-left: 3px solid var(--accent2);
+    padding-left: 12px;
+    margin-bottom: 16px;
+  }
+
+  .exercise-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+
+  .sets-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
+  .sets-table th { color: var(--text2); text-align: left; padding: 3px 6px 3px 0; font-weight: 500; }
+  .sets-table td { padding: 3px 6px 3px 0; color: var(--text); }
+
+  .exercise-summary { font-size: 11px; color: var(--text2); }
+  .exercise-summary span { color: var(--accent); font-weight: 700; }
+  .note-text { font-size: 11px; color: var(--warn); margin-top: 4px; font-style: italic; }
+
+  .chart-container { position: relative; width: 100%; overflow-x: auto; }
+  canvas { display: block; }
+
+  .exercise-filter { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+
+  .filter-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--text2);
+    font-size: 11px;
+    padding: 4px 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .filter-btn.active { background: var(--accent2); border-color: var(--accent2); color: #fff; }
+
+  .empty-state { text-align: center; color: var(--text2); font-size: 13px; padding: 32px 0; }
+
+  .session-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .session-item {
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 10px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+  }
+  .session-date { color: var(--text2); }
+  .session-volume { font-family: 'Space Grotesk', sans-serif; font-weight: 700; color: var(--accent); }
+  .delete-btn { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 14px; padding: 0 4px; }
+
+  .tabs { display: flex; gap: 0; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
+  .tab {
+    background: none;
+    border: none;
+    color: var(--text2);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 13px;
+    padding: 10px 16px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.2s;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .spinner {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid var(--accent2);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<h1>💪 筋トレログ</h1>
+<p class="subtitle">メモを貼ってAIが解析 → ボリューム推移グラフ</p>
+
+<div class="card">
+  <div class="card-title">📋 今日の記録を入力</div>
+  <div class="row">
+    <input type="date" id="dateInput">
+  </div>
+  <textarea id="memoInput" placeholder="トレーニングメモをそのままペーストしてにゃ🐾
+
+例：
+③レッグプレス→MAX55
+50 12
+55 10
+
+②スクワット
+60 10
+70 8"></textarea>
+  <div class="status" id="status"></div>
+  <br>
+  <button class="btn" id="analyzeBtn" onclick="analyzeWorkout()">🔍 AIで解析する</button>
+</div>
+
+<div class="card" id="previewCard" style="display:none">
+  <div class="card-title">✅ 解析結果プレビュー</div>
+  <div id="previewContent"></div>
+  <br>
+  <button class="btn" onclick="saveWorkout()">💾 記録を保存</button>
+</div>
+
+<div class="card">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('graph')">📈 グラフ</button>
+    <button class="tab" onclick="switchTab('history')">📅 履歴</button>
+  </div>
+
+  <div class="tab-content active" id="tab-graph">
+    <div class="exercise-filter" id="exerciseFilter"></div>
+    <div class="chart-container">
+      <canvas id="volumeChart" height="220"></canvas>
+    </div>
+    <div class="empty-state" id="graphEmpty">記録を追加するとグラフが表示されるにゃ🐾</div>
+  </div>
+
+  <div class="tab-content" id="tab-history">
+    <div class="session-list" id="sessionList"></div>
+    <div class="empty-state" id="historyEmpty">まだ記録がないにゃ🐾</div>
+  </div>
+</div>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(e => console.log('SW error:', e));
+  });
+}
+
+const STORAGE_KEY = 'workout_logs_v2';
+function getLogs() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; }
+}
+function saveLogs(logs) { localStorage.setItem(STORAGE_KEY, JSON.stringify(logs)); }
+
+let pendingWorkout = null;
+let selectedExercise = null;
+
+document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
+renderAll();
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ['graph','history'][i] === name));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === 'tab-' + name));
+}
+
+async function analyzeWorkout() {
+  const memo = document.getElementById('memoInput').value.trim();
+  const date = document.getElementById('dateInput').value;
+  if (!memo) { alert('メモを入力してにゃ🐾'); return; }
+  if (!date) { alert('日付を入力してにゃ🐾'); return; }
+
+  const btn = document.getElementById('analyzeBtn');
+  const status = document.getElementById('status');
+  btn.disabled = true;
+  status.classList.add('active');
+  status.innerHTML = '<span class="spinner"></span>AIが解析中にゃ…🐾';
+  document.getElementById('previewCard').style.display = 'none';
+
+  const prompt = `あなたは筋トレログ解析AIです。以下のトレーニングメモを解析してJSON形式で返してください。
+
+# ルール
+- 各種目を抽出し、セットごとに重量(kg)とレップ数を記録
+- 「今回はなし」「今日はなし」と書かれた種目はskipped:trueとして含める
+- 「→」や改行で区切られたセットは別セットとして扱う
+- キツイ、足つりそう、浅、深め、などのメモはnoteとして記録
+- 「✄」「•✧」などの区切り線は無視
+- 順番ついてる番号(①②③)は実施順として記録
+- 片手/片側などの記載もnoteに残す
+- 重量不明なセットはweightをnullに
+
+# 出力形式（JSONのみ、他のテキスト一切不要）
+{
+  "exercises": [
+    {
+      "order": 1,
+      "name": "種目名",
+      "skipped": false,
+      "sets": [
+        {"weight": 50, "reps": 12, "note": ""},
+        {"weight": 55, "reps": 10, "note": "キツイ"}
+      ],
+      "note": "種目全体へのメモ"
+    }
+  ]
+}
+
+# トレーニングメモ
+${memo}`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content.map(c => c.text || '').join('');
+    const clean = text.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+
+    pendingWorkout = { date, exercises: parsed.exercises };
+    renderPreview(parsed.exercises);
+    document.getElementById('previewCard').style.display = 'block';
+    status.innerHTML = '✅ 解析完了！内容を確認して保存してにゃ🐾';
+  } catch (e) {
+    status.innerHTML = '❌ 解析エラー。もう一度試してにゃ🐾';
+    console.error(e);
+  }
+  btn.disabled = false;
+}
+
+function renderPreview(exercises) {
+  document.getElementById('previewContent').innerHTML = exercises.map(ex => {
+    if (ex.skipped) return `<div class="exercise-block" style="border-color:#555">
+      <div class="exercise-name" style="color:var(--text2)">${ex.order ? ex.order+'. ' : ''}${ex.name} <span style="font-size:10px">（今回なし）</span></div></div>`;
+    const validSets = ex.sets.filter(s => s.weight !== null && s.reps);
+    const totalVol = validSets.reduce((s, t) => s + t.weight * t.reps, 0);
+    const maxW = validSets.length ? Math.max(...validSets.map(s => s.weight)) : 0;
+    const rows = ex.sets.map((s, i) =>
+      `<tr><td>${i+1}</td><td>${s.weight !== null ? s.weight+'kg' : '-'}</td><td>${s.reps}rep</td><td style="color:var(--warn);font-size:11px">${s.note||''}</td></tr>`
+    ).join('');
+    return `<div class="exercise-block">
+      <div class="exercise-name">${ex.order ? ex.order+'. ' : ''}${ex.name}</div>
+      <table class="sets-table"><tr><th>SET</th><th>重量</th><th>回数</th><th>メモ</th></tr>${rows}</table>
+      <div class="exercise-summary">最大重量 <span>${maxW}kg</span> ／ 総ボリューム <span>${totalVol.toLocaleString()}kg</span></div>
+      ${ex.note ? `<div class="note-text">📝 ${ex.note}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function saveWorkout() {
+  if (!pendingWorkout) return;
+  const logs = getLogs();
+  const idx = logs.findIndex(l => l.date === pendingWorkout.date);
+  if (idx >= 0) {
+    if (!confirm(`${pendingWorkout.date}の記録が既にあるにゃ。上書きする？`)) return;
+    logs[idx] = pendingWorkout;
+  } else {
+    logs.push(pendingWorkout);
+  }
+  logs.sort((a, b) => a.date.localeCompare(b.date));
+  saveLogs(logs);
+  pendingWorkout = null;
+  document.getElementById('previewCard').style.display = 'none';
+  document.getElementById('memoInput').value = '';
+  document.getElementById('status').classList.remove('active');
+  renderAll();
+  switchTab('graph');
+}
+
+function renderAll() {
+  const logs = getLogs();
+  renderFilters(logs);
+  renderChart(logs);
+  renderHistory(logs);
+}
+
+function renderFilters(logs) {
+  const exercises = new Set();
+  logs.forEach(log => log.exercises.forEach(ex => { if (!ex.skipped) exercises.add(ex.name); }));
+  const container = document.getElementById('exerciseFilter');
+  if (!exercises.size) { container.innerHTML = ''; return; }
+  container.innerHTML = ['全体', ...exercises].map(n =>
+    `<button class="filter-btn ${(n==='全体'&&!selectedExercise)||n===selectedExercise?'active':''}"
+      onclick="selectExercise(${n==='全体'?'null':`'${n}'`})">${n}</button>`
+  ).join('');
+}
+
+function selectExercise(name) { selectedExercise = name; renderAll(); }
+
+function renderChart(logs) {
+  const canvas = document.getElementById('volumeChart');
+  const empty = document.getElementById('graphEmpty');
+  if (!logs.length) { canvas.style.display='none'; empty.style.display='block'; return; }
+  canvas.style.display='block'; empty.style.display='none';
+
+  const points = logs.map(log => {
+    let vol = 0;
+    log.exercises.forEach(ex => {
+      if (ex.skipped) return;
+      if (selectedExercise && ex.name !== selectedExercise) return;
+      ex.sets.forEach(s => { if (s.weight !== null && s.reps) vol += s.weight * s.reps; });
+    });
+    return { date: log.date, vol };
+  });
+
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.parentElement.clientWidth;
+  const H = 220;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W+'px'; canvas.style.height = H+'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const pad = { top:20, right:20, bottom:50, left:55 };
+  const gW = W - pad.left - pad.right;
+  const gH = H - pad.top - pad.bottom;
+  ctx.clearRect(0, 0, W, H);
+
+  const maxV = Math.max(...points.map(p=>p.vol)) * 1.15 || 1000;
+
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.top + gH - (i/4)*gH;
+    const val = Math.round((i/4)*maxV);
+    ctx.strokeStyle='#2a2a32'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pad.left,y); ctx.lineTo(pad.left+gW,y); ctx.stroke();
+    ctx.fillStyle='#666'; ctx.font='10px sans-serif'; ctx.textAlign='right';
+    ctx.fillText(val>=1000?(val/1000).toFixed(1)+'k':val, pad.left-6, y+3);
+  }
+
+  const xs = points.map((_,i) => pad.left + (points.length===1 ? gW/2 : (i/(points.length-1))*gW));
+  const ys = points.map(p => pad.top + gH - (p.vol/maxV)*gH);
+
+  if (points.length > 1) {
+    const grad = ctx.createLinearGradient(0,pad.top,0,pad.top+gH);
+    grad.addColorStop(0,'rgba(200,245,53,0.25)');
+    grad.addColorStop(1,'rgba(200,245,53,0)');
+    ctx.beginPath(); ctx.moveTo(xs[0],ys[0]);
+    for (let i=1;i<xs.length;i++) { const mx=(xs[i-1]+xs[i])/2; ctx.bezierCurveTo(mx,ys[i-1],mx,ys[i],xs[i],ys[i]); }
+    ctx.lineTo(xs[xs.length-1],pad.top+gH); ctx.lineTo(xs[0],pad.top+gH);
+    ctx.closePath(); ctx.fillStyle=grad; ctx.fill();
+
+    ctx.beginPath(); ctx.moveTo(xs[0],ys[0]);
+    for (let i=1;i<xs.length;i++) { const mx=(xs[i-1]+xs[i])/2; ctx.bezierCurveTo(mx,ys[i-1],mx,ys[i],xs[i],ys[i]); }
+    ctx.strokeStyle='#c8f535'; ctx.lineWidth=2.5; ctx.stroke();
+  }
+
+  xs.forEach((x,i) => {
+    ctx.beginPath(); ctx.arc(x,ys[i],4,0,Math.PI*2);
+    ctx.fillStyle='#c8f535'; ctx.fill();
+  });
+
+  const step = Math.max(1, Math.floor(points.length/5));
+  points.forEach((p,i) => {
+    if (i%step!==0 && i!==points.length-1) return;
+    ctx.fillStyle='#666'; ctx.font='10px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(p.date.slice(5), xs[i], H-pad.bottom+18);
+  });
+
+  ctx.save(); ctx.translate(12, pad.top+gH/2); ctx.rotate(-Math.PI/2);
+  ctx.fillStyle='#555'; ctx.font='10px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('総ボリューム(kg)',0,0); ctx.restore();
+}
+
+function renderHistory(logs) {
+  const list = document.getElementById('sessionList');
+  const empty = document.getElementById('historyEmpty');
+  if (!logs.length) { list.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  list.innerHTML = [...logs].reverse().map(log => {
+    const totalVol = log.exercises.reduce((sum,ex) => {
+      if (ex.skipped) return sum;
+      return sum + ex.sets.reduce((s,t) => s+(t.weight||0)*(t.reps||0), 0);
+    }, 0);
+    const exCount = log.exercises.filter(e=>!e.skipped).length;
+    return `<div class="session-item">
+      <div><div style="font-weight:700">${log.date}</div><div class="session-date">${exCount}種目</div></div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="session-volume">${totalVol.toLocaleString()}kg</div>
+        <button class="delete-btn" onclick="deleteLog('${log.date}')">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function deleteLog(date) {
+  if (!confirm(`${date}の記録を削除する？`)) return;
+  saveLogs(getLogs().filter(l=>l.date!==date));
+  renderAll();
+}
+</script>
+</body>
+</html>
